@@ -1,91 +1,50 @@
 import 'package:chat/presenters/HomePresenter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chat/models/chat.dart';
 
-class ChatItem {
-  final String id;
-  final String title;
-  final String lastMessage;
-  final DateTime timestamp;
+// Provider for chat data
+final chatProvider = StateNotifierProvider<ChatNotifier, List<Chat>>((ref) {
+  return ChatNotifier();
+});
 
-  ChatItem({
-    required this.id,
-    required this.title, 
-    required this.lastMessage,
-    required this.timestamp,
-  });
+class ChatNotifier extends StateNotifier<List<Chat>> {
+  ChatNotifier() : super([]);
+
+  void addMessage(Chat chat) {
+    state = [chat, ...state]; // Adds new message to the list
+  }
 }
 
-class HomePage extends StatefulWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  ConsumerState<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  String? authToken;
-  List<ChatItem> chats = [];
-  bool isLoading = true;
-
+class _HomePageState extends ConsumerState<HomePage> {
+  late String username;
+  
   @override
   void initState() {
     super.initState();
-    HomePresenter.connectWebSocket();
-    _loadAuthTokenAndChats();
+    _loadUsername();
+    HomePresenter.listenToWebSocket(ref);
   }
-
-  Future<void> _loadAuthTokenAndChats() async {
-    setState(() {
-      isLoading = true;
-    });
-    
+  
+  Future<void> _loadUsername() async {
     final prefs = await SharedPreferences.getInstance();
-    authToken = prefs.getString('X-Auth-Token');
-    
-    // TODO: Replace this with actual API call to fetch chats
-    await _fetchMockChats();
-    
     setState(() {
-      isLoading = false;
-    });
-  }
-
-  Future<void> _fetchMockChats() async {
-    // Simulating API delay
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    // Mock data - replace with actual chat fetching logic
-    final mockChats = [
-      ChatItem(
-        id: '1',
-        title: 'John Doe',
-        lastMessage: 'Hey, how are you?',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-      ),
-      ChatItem(
-        id: '2',
-        title: 'Jane Smith',
-        lastMessage: 'Meeting at 3pm tomorrow',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-      ),
-      ChatItem(
-        id: '3',
-        title: 'Team Chat',
-        lastMessage: 'Alex: I finished the design',
-        timestamp: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-    ];
-    
-    setState(() {
-      chats = mockChats;
+      username = prefs.getString('username') ?? 'Anonymous';
     });
   }
 
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
+
     if (difference.inDays > 0) {
       return '${difference.inDays}d ago';
     } else if (difference.inHours > 0) {
@@ -99,29 +58,66 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final chats = ref.watch(chatProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chats'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: Implement search functionality
-            },
-          ),
-        ],
       ),
-      body: isLoading 
-        ? const Center(child: CircularProgressIndicator())
-        : chats.isEmpty 
-          ? _buildEmptyState() 
-          : _buildChatList(),
+      body: chats.isEmpty ? _buildEmptyState() : _buildChatList(chats),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // TODO: Navigate to new chat screen
         },
         child: const Icon(Icons.chat),
       ),
+    );
+  }
+
+  Widget _buildChatList(List<Chat> chats) {
+    // Get unique usernames and their latest messages
+    final Map<String, Chat> uniqueUserChats = {};
+
+    for (var chat in chats) {
+      final name = (chat.sender == username) ? chat.receiver : chat.sender;
+      if (!uniqueUserChats.containsKey(name) ||
+          chat.time.isAfter(uniqueUserChats[name]!.time)) {
+        uniqueUserChats[name] = chat;
+      }
+    }
+
+    final List<String> uniqueUsers = uniqueUserChats.keys.toList();
+
+    return ListView.builder(
+      itemCount: uniqueUsers.length,
+      itemBuilder: (context, index) {
+        final username = uniqueUsers[index];
+        final latestChat = uniqueUserChats[username]!;
+
+        return ListTile(
+          leading: CircleAvatar(
+            child: Text(username[0]),
+          ),
+          title: Text(username),
+          subtitle: Text(
+            latestChat.message,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          trailing: Text(_formatTimestamp(latestChat.time)),
+          onTap: () {
+            // TODO: Navigate to chat detail screen
+            Navigator.pushNamed(
+              context,
+              '/chat',
+              arguments: {
+                'username': username,
+                'chat': latestChat,
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -143,30 +139,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildChatList() {
-    return ListView.builder(
-      itemCount: chats.length,
-      itemBuilder: (context, index) {
-        final chat = chats[index];
-        return ListTile(
-          leading: CircleAvatar(
-            child: Text(chat.title[0]),
-          ),
-          title: Text(chat.title),
-          subtitle: Text(
-            chat.lastMessage,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Text(_formatTimestamp(chat.timestamp)),
-          onTap: () {
-            // TODO: Navigate to chat detail screen
-          },
-        );
-      },
     );
   }
 }

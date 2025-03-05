@@ -20,11 +20,12 @@ class Chat with _$Chat {
 
   factory Chat.fromJson(Map<String, dynamic> json) => _$ChatFromJson(json);
 }
-
 @riverpod
 class ChatState extends _$ChatState {
   @override
-  List<Chat> build() {
-    return [];
+  List<Chat> build() => [];
+
+  void addMessage(Chat chat) {
+    state = [chat, ...state ]; 
   }
 }

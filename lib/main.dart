@@ -1,6 +1,7 @@
+import 'package:chat/assets/theme.dart';
 import 'package:chat/pages/SignUpPage.dart';
+import 'package:chat/presenters/HomePresenter.dart';
 import 'package:flutter/material.dart';
-import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -27,9 +28,11 @@ void main() async {
   // Initialize SharedPreferences
   final prefs = await SharedPreferences.getInstance();
   // Check if auth token exists
+  // prefs.setString("username", "alexjohnson");
   final String? authToken = prefs.getString('X-Auth-Token');
   // Set initial route variable that we'll use below
   final String initialRoute = authToken != null ? '/home' : '/login';
+  await HomePresenter.connectWebSocket();
 
   // Register Hive adapters here if needed
   // Hive.registerAdapter(YourModelAdapter());
@@ -46,44 +49,35 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DynamicColorBuilder(
-      builder: (ColorScheme? lightDynamic, ColorScheme? darkDynamic) {
-        ColorScheme lightScheme;
-        ColorScheme darkScheme;
+    // Define fixed color schemes
+    ColorScheme lightScheme = MaterialTheme.lightScheme();
+    ColorScheme darkScheme = MaterialTheme.darkScheme();
 
-        if (lightDynamic != null && darkDynamic != null) {
-          lightScheme = lightDynamic;
-          darkScheme = darkDynamic;
-        } else {
-          lightScheme = ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          );
-          darkScheme = ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.dark,
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        colorScheme: lightScheme,
+        useMaterial3: true,
+      ),
+      darkTheme: ThemeData(
+        colorScheme: darkScheme,
+        useMaterial3: true,
+      ),
+      initialRoute: '/home',
+      routes: {
+        '/home': (context) => const HomePage(),
+        '/login': (context) => const LoginPage(),
+        '/signup': (context) => const SignUpPage(),
+        '/profile': (context) => const ProfilePage(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/chat') {
+          final args = settings.arguments as Map<String, dynamic>;
+          return MaterialPageRoute(
+            builder: (context) => ChatPage(contactName: args["username"]),
           );
         }
-
-        return MaterialApp(
-          title: 'Flutter Demo',
-          theme: ThemeData(
-            colorScheme: lightScheme,
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            colorScheme: darkScheme,
-            useMaterial3: true,
-          ),
-          initialRoute: initialRoute,
-          routes: {
-            '/home': (context) => const HomePage(),
-            '/login': (context) => const LoginPage(),
-            '/signup': (context) => const SignUpPage(),
-            '/chat': (context) => const ChatPage(),
-            '/profile': (context) => const ProfilePage(),
-          },
-        );
+        return null;
       },
     );
   }

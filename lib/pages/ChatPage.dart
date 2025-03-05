@@ -1,314 +1,383 @@
+import 'package:chat/pages/HomePage.dart';
+import 'package:chat/presenters/HomePresenter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:chat/models/chat.dart';
+import 'package:flutter_highlight/flutter_highlight.dart';
+import 'package:flutter_highlight/themes/github.dart';
+import 'package:flutter_highlight/themes/dracula.dart';
+import 'package:highlight/languages/javascript.dart';
+import 'package:highlight/languages/python.dart';
+import 'package:highlight/languages/dart.dart';
 
-class ChatPage extends StatefulWidget {
+class ChatPage extends ConsumerStatefulWidget {
   final String contactName;
-  
-  const ChatPage({
-    super.key, 
-    this.contactName = "John Doe" 
-  });
+
+  const ChatPage({super.key, required this.contactName});
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  ConsumerState<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends ConsumerState<ChatPage> {
+  String? reply;
+  String? replyMessage;
   final TextEditingController _messageController = TextEditingController();
-  final List<ChatMessage> _messages = [];
-  ChatMessage? _replyingTo;
+  final ScrollController _scrollController = ScrollController();
 
-  @override
-  void initState() {
-    super.initState();
-    // Add mock data
-    _loadMockMessages();
-  }
-
-  void _loadMockMessages() {
-    var mockMessages = [
-      ChatMessage(id: '1', text: "Hey, how are you?", isMe: false),
-      ChatMessage(id: '2', text: "I'm good, thanks! How about you?", isMe: true),
-      ChatMessage(id: '3', text: "Doing well! Did you finish the project?", isMe: false),
-      ChatMessage(id: '4', text: "Almost done, just need to fix a few bugs.", isMe: true),
-      ChatMessage(id: '5', text: "Let me know if you need any help!", isMe: false),
-    ];
-    mockMessages[1].replyTo = mockMessages[0];
-    
-    setState(() {
-      _messages.addAll(mockMessages);
-    });
-  }
-
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
-    
-    final messageText = _messageController.text;
-    final newId = DateTime.now().millisecondsSinceEpoch.toString();
-    
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          id: newId,
-          text: messageText,
-          isMe: true,
-          replyTo: _replyingTo,
-        ),
-      );
-      
-      // Clear reply state
-      _replyingTo = null;
-      
-      // Add a simulated response
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          setState(() {
-            _messages.add(
-              ChatMessage(
-                id: '${newId}_response',
-                text: "This is a response to: $messageText",
-                isMe: false,
-              ),
-            );
-          });
-        }
-      });
-    });
-    _messageController.clear();
-  }
-  
-  void _setReplyMessage(ChatMessage message) {
-    setState(() {
-      _replyingTo = message;
-    });
-    FocusScope.of(context).requestFocus(FocusNode());
-    _messageController.text = '';
-  }
-  
-  void _cancelReply() {
-    setState(() {
-      _replyingTo = null;
-    });
-  }
+  List<Chat> get allChats => ref
+      .watch(chatProvider)
+      .where((chat) =>
+          chat.sender == widget.contactName ||
+          chat.receiver == widget.contactName)
+      .toList();
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final allChats = ref.watch(chatProvider);
+    final chats = allChats
+        .where((chat) =>
+            chat.sender == widget.contactName ||
+            chat.receiver == widget.contactName)
+        .toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.contactName),
-        actions: [
-          CircleAvatar(
-            child: Text(widget.contactName[0]),
-            backgroundColor: Colors.blue.shade300,
-          ),
-          const SizedBox(width: 16),
-        ],
+        elevation: 2,
+        backgroundColor: colorScheme.onPrimary,
+        foregroundColor: colorScheme.primary,
       ),
-      body: Column(
+      body: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+        ),
+        child: Column(
+          children: [
+            Expanded(
+              child: chats.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      controller: _scrollController,
+                      reverse: true,
+                      itemCount: chats.length,
+                      itemBuilder: (context, index) {
+                        final chat = chats[index];
+                        final isMe = chat.sender != widget.contactName;
+
+                        return Container(
+                          margin: const EdgeInsets.symmetric(
+                              vertical: 8, horizontal: 12),
+                          alignment: isMe
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: _buildMessageBubble(chat, isMe, colorScheme),
+                        );
+                      },
+                    ),
+            ),
+            if (reply != null) _buildReplyUI(colorScheme),
+            _buildMessageInput(colorScheme),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyUI(ColorScheme colorScheme) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      color: colorScheme.surfaceContainerHighest,
+      child: Row(
         children: [
           Expanded(
-            child: ListView.builder(
-              reverse: true,
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[_messages.length - 1 - index];
-                return GestureDetector(
-                  onLongPress: () => _setReplyMessage(message),
-                  child: message,
-                );
-              },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Replying to:",
+                  style: TextStyle(
+                      color: colorScheme.onSurfaceVariant, fontSize: 14),
+                ),
+                Text(
+                  replyMessage ?? "",
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
           ),
-          if (_replyingTo != null)
-            Container(
-              padding: const EdgeInsets.all(8),
-              color: Colors.grey[200],
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _replyingTo!.isMe ? 'You' : widget.contactName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          _replyingTo!.text,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        )
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: _cancelReply,
-                  )
-                ],
-              ),
-            ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, -1),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: _replyingTo != null 
-                          ? 'Reply to message...' 
-                          : 'Type a message...',
-                      hintStyle: TextStyle(color: Colors.grey[500]),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(25.0),
-                        borderSide: BorderSide.none,
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[200],
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 20.0, 
-                        vertical: 10.0,
-                      ),
-                    ),
-                    maxLines: null,
-                    textCapitalization: TextCapitalization.sentences,
-                    onSubmitted: (_) => _sendMessage(),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  color: Colors.blue[700],
-                  onPressed: _sendMessage,
-                ),
-              ],
-            ),
+          IconButton(
+            icon: Icon(Icons.close, color: colorScheme.onSurfaceVariant),
+            onPressed: () {
+              setState(() {
+                reply = null;
+                replyMessage = null;
+              });
+            },
           ),
         ],
       ),
     );
   }
 
-  @override
-  void dispose() {
-    _messageController.dispose();
-    super.dispose();
+
+Widget _buildMessageBubble(Chat chat, bool isMe, ColorScheme colorScheme) {
+  bool isCodeBlock = chat.message.startsWith("```") && chat.message.endsWith("```");
+  bool isInlineCode = chat.message.contains("`") && !isCodeBlock;
+
+  // Extract language and code (assuming syntax like ```dart\ncode\n```)
+  String? language;
+  String code = chat.message;
+  if (isCodeBlock) {
+    final match = RegExp(r'```(\w*)\n([\s\S]+?)\n```').firstMatch(chat.message);
+    if (match != null) {
+      language = match.group(1)?.toLowerCase();
+      code = match.group(2) ?? "";
+    }
+  }
+
+  return GestureDetector(
+    onLongPress: () {
+      showModalBottomSheet(
+        context: context,
+        builder: (context) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.reply),
+              title: const Text('Reply'),
+              onTap: () {
+                setState(() {
+                  reply = chat.messageId;
+                  replyMessage = chat.message;
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy),
+              title: const Text('Copy'),
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: chat.message));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Message copied to clipboard')),
+                );
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      );
+    },
+    child: Column(
+      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        if (chat.repliedMessage != null)
+          Container(
+            padding: const EdgeInsets.all(6),
+            margin: const EdgeInsets.only(bottom: 4),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              "Reply: ${allChats.firstWhere((element) => element.messageId == chat.repliedMessage, orElse: () => Chat(messageId: "", message: "Not found", sender: "", receiver: "", time: DateTime.now(), repliedMessage: null)).message}",
+              style: TextStyle(
+                fontSize: 14,
+                fontStyle: FontStyle.italic,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isMe ? colorScheme.primary : colorScheme.onPrimaryFixedVariant,
+            borderRadius: BorderRadius.circular(20).copyWith(
+              bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(20),
+              bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(0),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 5,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: isCodeBlock
+              ? HighlightView(
+                  code,
+                  language: _getHighlightLanguage(language),
+                  theme: Theme.of(context).brightness == Brightness.light ? githubTheme : draculaTheme,
+                  padding: const EdgeInsets.all(8),
+                  textStyle: const TextStyle(fontSize: 14),
+                )
+              : isInlineCode
+                  ? Text.rich(
+                      _getStyledText(chat.message, colorScheme),
+                      style: const TextStyle(fontSize: 16),
+                    )
+                  : Text(
+                      chat.message,
+                      style: TextStyle(
+                        color: isMe ? colorScheme.onPrimary : colorScheme.onSurface,
+                        fontSize: 16,
+                      ),
+                    ),
+        ),
+      ],
+    ),
+  );
+}
+
+// Helper function to get the correct language
+String? _getHighlightLanguage(String? lang) {
+  switch (lang) {
+    case 'dart':
+      return 'dart';
+    case 'js':
+    case 'javascript':
+      return 'javascript';
+    case 'py':
+    case 'python':
+      return 'python';
+    default:
+      return null;
   }
 }
 
-class ChatMessage extends StatelessWidget {
-  final String id;
-  final String text;
-  final bool isMe;
-  late ChatMessage? replyTo;
+// Helper function to style inline code
+TextSpan _getStyledText(String message, ColorScheme colorScheme) {
+  final regex = RegExp(r'`(.*?)`');
+  final spans = <TextSpan>[];
+  int lastMatchEnd = 0;
 
-  ChatMessage({
-    Key? key,
-    required this.id,
-    required this.text,
-    required this.isMe,
-    this.replyTo,
-  }) : super(key: key);
+  for (final match in regex.allMatches(message)) {
+    if (match.start > lastMatchEnd) {
+      spans.add(TextSpan(text: message.substring(lastMatchEnd, match.start)));
+    }
+    spans.add(TextSpan(
+      text: match.group(1),
+      style: TextStyle(
+        fontFamily: 'monospace',
+        backgroundColor: colorScheme.surfaceContainerHighest,
+        color: colorScheme.onSurfaceVariant,
+      ),
+    ));
+    lastMatchEnd = match.end;
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  if (lastMatchEnd < message.length) {
+    spans.add(TextSpan(text: message.substring(lastMatchEnd)));
+  }
+
+  return TextSpan(children: spans);
+}
+
+  Widget _buildMessageInput(ColorScheme colorScheme) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!isMe)
-            CircleAvatar(
-              backgroundColor: Colors.grey[200],
-              child: Text(
-                'JD', // First letter of contact name
-                style: TextStyle(color: Colors.blue[700]),
-              ),
-            ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                if (replyTo != null)
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    margin: const EdgeInsets.only(bottom: 4),
-                    decoration: BoxDecoration(
-                      color: isMe ? Colors.blue[600] : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          replyTo!.isMe ? 'You' : 'John Doe',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: isMe ? Colors.white70 : Colors.black54,
-                          ),
-                        ),
-                        Text(
-                          replyTo!.text,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: isMe ? Colors.white : Colors.black87,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: isMe ? Colors.blue[700] : Colors.grey[200],
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(18),
-                      topRight: const Radius.circular(18),
-                      bottomLeft: isMe ? const Radius.circular(18) : const Radius.circular(4),
-                      bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(18),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    text,
-                    style: TextStyle(
-                      color: isMe ? Colors.white : Colors.black87,
-                      fontSize: 16,
-                    ),
-                  ),
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: InputDecoration(
+                hintText: 'Message',
+                hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
                 ),
-              ],
+              ),
+              onSubmitted: (_) => _sendMessage(),
             ),
           ),
-          const SizedBox(width: 10),
-          if (isMe)
-            CircleAvatar(
-              backgroundColor: Colors.blue[700],
-              child: const Icon(Icons.person, color: Colors.white),
+          const SizedBox(width: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.primary,
+              shape: BoxShape.circle,
             ),
+            child: IconButton(
+              icon: Icon(Icons.send_rounded, color: colorScheme.onPrimary),
+              onPressed: _sendMessage,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 60,
+            color: Colors.grey[500],
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'No messages yet',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[800],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Say hello to start a conversation!',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+    print("Sending message: $reply");
+    final newChat = Chat(
+      sender: "alexjohnson",
+      receiver: widget.contactName,
+      message: text,
+      time: DateTime.now(),
+      messageId: "${DateTime.now().millisecondsSinceEpoch}",
+      isSent: true,
+      repliedMessage: reply,
+    );
+
+    HomePresenter.sendMessage(newChat);
+    _messageController.clear();
+    setState(() {
+      reply = null;
+      replyMessage = null;
+    });
   }
 }

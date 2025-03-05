@@ -41,7 +41,7 @@ Map<String, dynamic> _$$ChatImplToJson(_$ChatImpl instance) =>
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatStateHash() => r'120b2b4ca13a90290df467cbaf50489bfe983d69';
+String _$chatStateHash() => r'fa8a902d34435af1b9e966c95dbded9cd0e97b8c';
 
 /// See also [ChatState].
 @ProviderFor(ChatState)
