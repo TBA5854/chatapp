@@ -25,6 +25,7 @@ mixin _$Chat {
   String get message => throw _privateConstructorUsedError;
   DateTime get time => throw _privateConstructorUsedError;
   String get messageId => throw _privateConstructorUsedError;
+  String? get repliedMessage => throw _privateConstructorUsedError;
   bool? get isSent => throw _privateConstructorUsedError;
 
   /// Serializes this Chat to a JSON map.
@@ -47,6 +48,7 @@ abstract class $ChatCopyWith<$Res> {
       String message,
       DateTime time,
       String messageId,
+      String? repliedMessage,
       bool? isSent});
 }
 
@@ -70,6 +72,7 @@ class _$ChatCopyWithImpl<$Res, $Val extends Chat>
     Object? message = null,
     Object? time = null,
     Object? messageId = null,
+    Object? repliedMessage = freezed,
     Object? isSent = freezed,
   }) {
     return _then(_value.copyWith(
@@ -93,6 +96,10 @@ class _$ChatCopyWithImpl<$Res, $Val extends Chat>
           ? _value.messageId
           : messageId // ignore: cast_nullable_to_non_nullable
               as String,
+      repliedMessage: freezed == repliedMessage
+          ? _value.repliedMessage
+          : repliedMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
       isSent: freezed == isSent
           ? _value.isSent
           : isSent // ignore: cast_nullable_to_non_nullable
@@ -114,6 +121,7 @@ abstract class _$$ChatImplCopyWith<$Res> implements $ChatCopyWith<$Res> {
       String message,
       DateTime time,
       String messageId,
+      String? repliedMessage,
       bool? isSent});
 }
 
@@ -134,6 +142,7 @@ class __$$ChatImplCopyWithImpl<$Res>
     Object? message = null,
     Object? time = null,
     Object? messageId = null,
+    Object? repliedMessage = freezed,
     Object? isSent = freezed,
   }) {
     return _then(_$ChatImpl(
@@ -157,6 +166,10 @@ class __$$ChatImplCopyWithImpl<$Res>
           ? _value.messageId
           : messageId // ignore: cast_nullable_to_non_nullable
               as String,
+      repliedMessage: freezed == repliedMessage
+          ? _value.repliedMessage
+          : repliedMessage // ignore: cast_nullable_to_non_nullable
+              as String?,
       isSent: freezed == isSent
           ? _value.isSent
           : isSent // ignore: cast_nullable_to_non_nullable
@@ -174,6 +187,7 @@ class _$ChatImpl implements _Chat {
       required this.message,
       required this.time,
       required this.messageId,
+      required this.repliedMessage,
       this.isSent});
 
   factory _$ChatImpl.fromJson(Map<String, dynamic> json) =>
@@ -190,11 +204,13 @@ class _$ChatImpl implements _Chat {
   @override
   final String messageId;
   @override
+  final String? repliedMessage;
+  @override
   final bool? isSent;
 
   @override
   String toString() {
-    return 'Chat(sender: $sender, receiver: $receiver, message: $message, time: $time, messageId: $messageId, isSent: $isSent)';
+    return 'Chat(sender: $sender, receiver: $receiver, message: $message, time: $time, messageId: $messageId, repliedMessage: $repliedMessage, isSent: $isSent)';
   }
 
   @override
@@ -209,13 +225,15 @@ class _$ChatImpl implements _Chat {
             (identical(other.time, time) || other.time == time) &&
             (identical(other.messageId, messageId) ||
                 other.messageId == messageId) &&
+            (identical(other.repliedMessage, repliedMessage) ||
+                other.repliedMessage == repliedMessage) &&
             (identical(other.isSent, isSent) || other.isSent == isSent));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, sender, receiver, message, time, messageId, isSent);
+  int get hashCode => Object.hash(runtimeType, sender, receiver, message, time,
+      messageId, repliedMessage, isSent);
 
   /// Create a copy of Chat
   /// with the given fields replaced by the non-null parameter values.
@@ -240,6 +258,7 @@ abstract class _Chat implements Chat {
       required final String message,
       required final DateTime time,
       required final String messageId,
+      required final String? repliedMessage,
       final bool? isSent}) = _$ChatImpl;
 
   factory _Chat.fromJson(Map<String, dynamic> json) = _$ChatImpl.fromJson;
@@ -254,6 +273,8 @@ abstract class _Chat implements Chat {
   DateTime get time;
   @override
   String get messageId;
+  @override
+  String? get repliedMessage;
   @override
   bool? get isSent;
 

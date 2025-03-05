@@ -9,10 +9,11 @@ import 'package:chat/pages/LoginPage.dart';
 import 'package:chat/pages/ChatPage.dart';
 import 'package:chat/pages/ProfilePage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Load .env file
   await dotenv.load(fileName: "lib/assets/.env");
   final backendUrl = dotenv.env['BACKEND_URL'];
@@ -23,18 +24,25 @@ void main() async {
   final appDocumentDir = await path_provider.getApplicationDocumentsDirectory();
   print(appDocumentDir.path);
   await Hive.initFlutter(appDocumentDir.path);
-  
+  // Initialize SharedPreferences
+  final prefs = await SharedPreferences.getInstance();
+  // Check if auth token exists
+  final String? authToken = prefs.getString('X-Auth-Token');
+  // Set initial route variable that we'll use below
+  final String initialRoute = authToken != null ? '/home' : '/login';
+
   // Register Hive adapters here if needed
   // Hive.registerAdapter(YourModelAdapter());
-  
+
   // Open your Hive boxes
   // await Hive.openBox('yourBoxName');
-  
-  runApp(const ProviderScope(child: MyApp()));
+
+  runApp(ProviderScope(child: MyApp(initialRoute: initialRoute)));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String initialRoute;
+  const MyApp({super.key, required this.initialRoute});
 
   @override
   Widget build(BuildContext context) {
@@ -47,14 +55,14 @@ class MyApp extends StatelessWidget {
           lightScheme = lightDynamic;
           darkScheme = darkDynamic;
         } else {
-            lightScheme = ColorScheme.fromSeed(
+          lightScheme = ColorScheme.fromSeed(
             seedColor: Colors.blue,
             brightness: Brightness.light,
-            );
-            darkScheme = ColorScheme.fromSeed(
+          );
+          darkScheme = ColorScheme.fromSeed(
             seedColor: Colors.blue,
             brightness: Brightness.dark,
-            );
+          );
         }
 
         return MaterialApp(
@@ -67,8 +75,8 @@ class MyApp extends StatelessWidget {
             colorScheme: darkScheme,
             useMaterial3: true,
           ),
-          initialRoute: '/login',
-            routes: {
+          initialRoute: initialRoute,
+          routes: {
             '/home': (context) => const HomePage(),
             '/login': (context) => const LoginPage(),
             '/signup': (context) => const SignUpPage(),

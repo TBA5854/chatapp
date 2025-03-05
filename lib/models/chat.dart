@@ -14,6 +14,7 @@ class Chat with _$Chat {
     required String message,
     required DateTime time,
     required String messageId,
+    required String? repliedMessage,
     bool? isSent,
   }) = _Chat;
 

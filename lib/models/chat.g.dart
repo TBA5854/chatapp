@@ -6,13 +6,13 @@ part of 'chat.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-
 Map<String, dynamic> _$ChatToJson(Chat instance) => <String, dynamic>{
       'sender': instance.sender,
       'receiver': instance.receiver,
       'message': instance.message,
       'time': instance.time.toIso8601String(),
       'messageId': instance.messageId,
+      'repliedMessage': instance.repliedMessage,
       'isSent': instance.isSent,
     };
 
@@ -22,6 +22,7 @@ _$ChatImpl _$$ChatImplFromJson(Map<String, dynamic> json) => _$ChatImpl(
       message: json['message'] as String,
       time: DateTime.parse(json['time'] as String),
       messageId: json['messageId'] as String,
+      repliedMessage: json['repliedMessage'] as String?,
       isSent: json['isSent'] as bool?,
     );
 
@@ -32,6 +33,7 @@ Map<String, dynamic> _$$ChatImplToJson(_$ChatImpl instance) =>
       'message': instance.message,
       'time': instance.time.toIso8601String(),
       'messageId': instance.messageId,
+      'repliedMessage': instance.repliedMessage,
       'isSent': instance.isSent,
     };
 
