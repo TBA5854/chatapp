@@ -55,7 +55,7 @@ class MyApp extends StatelessWidget {
     ColorScheme darkScheme = MaterialTheme.darkScheme();
 
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: "TBA's Chat App",
       theme: ThemeData(
         colorScheme: lightScheme,
         useMaterial3: true,
