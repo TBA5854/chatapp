@@ -20,12 +20,19 @@ Chat _$ChatFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$Chat {
+  @HiveField(0)
   String get sender => throw _privateConstructorUsedError;
+  @HiveField(1)
   String get receiver => throw _privateConstructorUsedError;
+  @HiveField(2)
   String get message => throw _privateConstructorUsedError;
+  @HiveField(3)
   DateTime get time => throw _privateConstructorUsedError;
+  @HiveField(4)
   String get messageId => throw _privateConstructorUsedError;
+  @HiveField(5)
   String? get repliedMessage => throw _privateConstructorUsedError;
+  @HiveField(6)
   bool? get isSent => throw _privateConstructorUsedError;
 
   /// Serializes this Chat to a JSON map.
@@ -43,13 +50,13 @@ abstract class $ChatCopyWith<$Res> {
       _$ChatCopyWithImpl<$Res, Chat>;
   @useResult
   $Res call(
-      {String sender,
-      String receiver,
-      String message,
-      DateTime time,
-      String messageId,
-      String? repliedMessage,
-      bool? isSent});
+      {@HiveField(0) String sender,
+      @HiveField(1) String receiver,
+      @HiveField(2) String message,
+      @HiveField(3) DateTime time,
+      @HiveField(4) String messageId,
+      @HiveField(5) String? repliedMessage,
+      @HiveField(6) bool? isSent});
 }
 
 /// @nodoc
@@ -116,13 +123,13 @@ abstract class _$$ChatImplCopyWith<$Res> implements $ChatCopyWith<$Res> {
   @override
   @useResult
   $Res call(
-      {String sender,
-      String receiver,
-      String message,
-      DateTime time,
-      String messageId,
-      String? repliedMessage,
-      bool? isSent});
+      {@HiveField(0) String sender,
+      @HiveField(1) String receiver,
+      @HiveField(2) String message,
+      @HiveField(3) DateTime time,
+      @HiveField(4) String messageId,
+      @HiveField(5) String? repliedMessage,
+      @HiveField(6) bool? isSent});
 }
 
 /// @nodoc
@@ -182,30 +189,37 @@ class __$$ChatImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$ChatImpl implements _Chat {
   const _$ChatImpl(
-      {required this.sender,
-      required this.receiver,
-      required this.message,
-      required this.time,
-      required this.messageId,
-      required this.repliedMessage,
-      this.isSent});
+      {@HiveField(0) required this.sender,
+      @HiveField(1) required this.receiver,
+      @HiveField(2) required this.message,
+      @HiveField(3) required this.time,
+      @HiveField(4) required this.messageId,
+      @HiveField(5) required this.repliedMessage,
+      @HiveField(6) this.isSent});
 
   factory _$ChatImpl.fromJson(Map<String, dynamic> json) =>
       _$$ChatImplFromJson(json);
 
   @override
+  @HiveField(0)
   final String sender;
   @override
+  @HiveField(1)
   final String receiver;
   @override
+  @HiveField(2)
   final String message;
   @override
+  @HiveField(3)
   final DateTime time;
   @override
+  @HiveField(4)
   final String messageId;
   @override
+  @HiveField(5)
   final String? repliedMessage;
   @override
+  @HiveField(6)
   final bool? isSent;
 
   @override
@@ -253,29 +267,36 @@ class _$ChatImpl implements _Chat {
 
 abstract class _Chat implements Chat {
   const factory _Chat(
-      {required final String sender,
-      required final String receiver,
-      required final String message,
-      required final DateTime time,
-      required final String messageId,
-      required final String? repliedMessage,
-      final bool? isSent}) = _$ChatImpl;
+      {@HiveField(0) required final String sender,
+      @HiveField(1) required final String receiver,
+      @HiveField(2) required final String message,
+      @HiveField(3) required final DateTime time,
+      @HiveField(4) required final String messageId,
+      @HiveField(5) required final String? repliedMessage,
+      @HiveField(6) final bool? isSent}) = _$ChatImpl;
 
   factory _Chat.fromJson(Map<String, dynamic> json) = _$ChatImpl.fromJson;
 
   @override
+  @HiveField(0)
   String get sender;
   @override
+  @HiveField(1)
   String get receiver;
   @override
+  @HiveField(2)
   String get message;
   @override
+  @HiveField(3)
   DateTime get time;
   @override
+  @HiveField(4)
   String get messageId;
   @override
+  @HiveField(5)
   String? get repliedMessage;
   @override
+  @HiveField(6)
   bool? get isSent;
 
   /// Create a copy of Chat

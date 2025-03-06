@@ -3,6 +3,62 @@
 part of 'chat.dart';
 
 // **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
+
+class ChatAdapter extends TypeAdapter<Chat> {
+  @override
+  final int typeId = 0;
+
+  @override
+  Chat read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return Chat(
+      sender: fields[0] as String,
+      receiver: fields[1] as String,
+      message: fields[2] as String,
+      time: fields[3] as DateTime,
+      messageId: fields[4] as String,
+      repliedMessage: fields[5] as String?,
+      isSent: fields[6] as bool?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, Chat obj) {
+    writer
+      ..writeByte(7)
+      ..writeByte(0)
+      ..write(obj.sender)
+      ..writeByte(1)
+      ..write(obj.receiver)
+      ..writeByte(2)
+      ..write(obj.message)
+      ..writeByte(3)
+      ..write(obj.time)
+      ..writeByte(4)
+      ..write(obj.messageId)
+      ..writeByte(5)
+      ..write(obj.repliedMessage)
+      ..writeByte(6)
+      ..write(obj.isSent);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ChatAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
+// **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
@@ -41,7 +97,7 @@ Map<String, dynamic> _$$ChatImplToJson(_$ChatImpl instance) =>
 // RiverpodGenerator
 // **************************************************************************
 
-String _$chatStateHash() => r'fa8a902d34435af1b9e966c95dbded9cd0e97b8c';
+String _$chatStateHash() => r'0e8c28c38d5513c66f20d21d47ee9012a2ac501f';
 
 /// See also [ChatState].
 @ProviderFor(ChatState)
