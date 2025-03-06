@@ -1,3 +1,4 @@
+import 'package:chat/main.dart';
 import 'package:chat/pages/HomePage.dart';
 import 'package:chat/controllers/WsController.dart';
 import 'package:flutter/material.dart';
@@ -373,7 +374,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       if (text.isEmpty) return;
       print("Sending message: $reply");
       final newChat = Chat(
-        sender: "alexjohnson",
+        sender: username,
         receiver: widget.contactName,
         message: text,
         time: DateTime.now(),

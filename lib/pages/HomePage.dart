@@ -8,22 +8,31 @@ import 'package:chat/models/chat.dart';
 import 'package:chat/widgets/home/chatListEmpty.dart';
 import 'package:chat/widgets/home/chatListWidget.dart';
 
-// Provider for chat data
 final chatProvider = StateNotifierProvider<ChatNotifier, List<Chat>>((ref) {
   return ChatNotifier();
 });
 
 class ChatNotifier extends StateNotifier<List<Chat>> {
-  final Box<Chat> _chatBox = Hive.box<Chat>('chatBox');
+  static var chatBox = Hive.box<Chat>('chatBox');
   ChatNotifier() : super([]) {
-    state = _chatBox.values.toList();
+    state = chatBox.values.toList();
     }
   
+  static void clear() {
+    chatBox.close();
+    chatBox.clear();
+  }
+  void clearChats() {
+    clearChats();
+    state = [];
+  }
   
 
   void addMessage(Chat chat) {
-    _chatBox.put(chat.messageId, chat);
-    print("chat: ${_chatBox.values}");
+    chatBox.put(chat.messageId, chat);
+    for (var chat in chatBox.values) {
+      print("chat: $chat");
+    }
     state = [chat, ...state];
   }
 
@@ -31,8 +40,8 @@ class ChatNotifier extends StateNotifier<List<Chat>> {
     state = state.map((chat) {
       if (chat.messageId == oldId) {
         final updatedChat = chat.copyWith(messageId: newId);
-        _chatBox.put(newId, updatedChat);
-        _chatBox.delete(oldId);
+        chatBox.put(newId, updatedChat);
+        chatBox.delete(oldId);
         return updatedChat;
       }
       return chat;

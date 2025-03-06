@@ -1,3 +1,4 @@
+import 'package:chat/controllers/LoginSigninControllers.dart';
 import 'package:chat/presenters/LoginSignUp.dart';
 import 'package:flutter/material.dart';
 
@@ -189,7 +190,18 @@ class _SignUpPageState extends State<SignUpPage> {
                           ? null
                           : () {
                               if (_formKey.currentState!.validate()) {
-                                // Handle sign up logic
+                                setState(() {
+                                  _isLoading = true;
+                                });
+                                Loginsignincontrollers.signup(
+                                  context: context,
+                                  usrname: _usernameController.text,
+                                  password: _passwordController.text,
+                                ).then((value) {
+                                  setState(() {
+                                    _isLoading = false;
+                                  });
+                                });
                               }
                             },
                       style: ElevatedButton.styleFrom(
